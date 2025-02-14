@@ -24,114 +24,10 @@ db.connect(err => {
     console.log('Connesso al database MySQL!');
 });
 
-app.post('/register', (req, res) => {
-    const { username, password, email } = req.body;
 
-    db.query('SELECT * FROM utenti WHERE username = ?', [username], (err, results) => {
-        if (err) {
-            console.error('Errore durante la query: ', err);
-            return res.status(500).json({ success: false, message: 'Errore server' });
-        }
+/*GESTIONE RICHIESTE DELLA MIA API*/ 
 
-        if (results.length > 0) {
-            return res.json({ success: false, message: 'Username già in uso' });
-        }
-
-        db.query('INSERT INTO utenti (username, password, approved, email) VALUES (?, ?, 0, ?)', 
-            [username, password, email], (err, results) => {
-            if (err) {
-                console.error('Errore durante l’inserimento: ', err);
-                return res.status(500).json({ success: false, message: 'Errore server' });
-            }
-
-            console.log(`Nuova richiesta di registrazione: ${username}`);
-
-            res.json({ success: true, message: 'Registrazione in attesa di approvazione. Attendi la conferma.' });
-        });
-    });
-});
-
-app.get('/pending-users', (req, res) => {
-    db.query('SELECT id, username, email FROM utenti WHERE approved = 0', (err, results) => {
-        if (err) {
-            console.error('Errore durante la query: ', err);
-            return res.status(500).json({ success: false, message: 'Errore server' });
-        }
-
-        res.json(results);
-    });
-});
-
-app.post('/admin/approveUser/:id', (req, res) => {
-    const { id } = req.params;
-
-    db.query('UPDATE utenti SET approved = 1 WHERE id = ?', [id], (err, results) => {
-        if (err) {
-            console.error('Errore durante l\'approvazione dell\'utente: ', err);
-            return res.status(500).json({ success: false, message: 'Errore server' });
-        }
-
-        if (results.affectedRows === 0) {
-            return res.json({ success: false, message: 'Utente non trovato' });
-        }
-
-        res.json({ success: true, message: 'Utente approvato con successo!' });
-    });
-});
-
-app.post('/admin/rejectUser/:id', (req, res) => {
-    const { id } = req.params;
-
-    db.query('DELETE FROM utenti WHERE id = ?', [id], (err) => {
-        if (err) {
-            console.error('Errore durante il rifiuto dell\'utente: ', err);
-            return res.status(500).json({ success: false, message: 'Errore server' });
-        }
-
-        res.json({ success: true, message: 'Utente rifiutato!' });
-    });
-});
-
-app.post("/saveExercise", (req, res) => {
-    const { name, description } = req.body;
-    const sql = "INSERT INTO esercizi (nome, descrizione) VALUES (?, ?)";
-    
-    db.query(sql, [name, description], (err, result) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: "Esercizio salvato!", id: result.insertId });
-    });
-});
-
-app.post("/saveWorkout", (req, res) => {
-    const { exercise, day, sets } = req.body;
-    const sql = "INSERT INTO piano_workout (esercizio, giorno, sets) VALUES (?, ?, ?)";
-    
-    db.query(sql, [exercise, day, sets], (err, result) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: "Workout salvato!", id: result.insertId });
-    });
-});
-
-app.delete("/deleteAllExercises", async (req, res) => {
-    try {
-        db.query("DELETE FROM piano_workout");
-    } catch (error) {
-        console.error("Errore eliminazione esercizi:", error);
-        res.status(500).json({ error: "Errore del server" });
-    }
-});
-
-app.get('/getSavedExercises', (req, res) => {
-    const query = 'SELECT * FROM piano_workout';
-    db.query(query, (err, result) => {
-        if (err) {
-            console.error('Errore durante il recupero degli esercizi:', err);
-            return res.status(500).send('Errore del server');
-        }
-        res.json(result);
-    });
-});
-
+//gestione login da parte del'utente
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
 
@@ -159,6 +55,107 @@ app.post('/login', (req, res) => {
             });
         }
     );
+});
+
+//Gestione della richiesta post per la registrazione di un nuovo utente
+app.post('/register', (req, res) => {
+    const { username, password, email } = req.body;
+
+    db.query('SELECT * FROM utenti WHERE username = ?', [username], (err, results) => {
+        if (err) {
+            console.error('Errore durante la query: ', err);
+            return res.status(500).json({ success: false, message: 'Errore server' });
+        }
+
+        if (results.length > 0) {
+            return res.json({ success: false, message: 'Username già in uso' });
+        }
+
+        db.query('INSERT INTO utenti (username, password, approved, email) VALUES (?, ?, 0, ?)', 
+            [username, password, email], (err, results) => {
+            if (err) {
+                console.error('Errore durante l’inserimento: ', err);
+                return res.status(500).json({ success: false, message: 'Errore server' });
+            }
+
+            console.log(`Nuova richiesta di registrazione: ${username}`);
+
+            res.json({ success: true, message: 'Registrazione in attesa di approvazione. Attendi la conferma.' });
+        });
+    });
+});
+
+//gestione dell'amministratore per le richieste di registrazione
+app.get('/pending-users', (req, res) => {
+    db.query('SELECT id, username, email FROM utenti WHERE approved = 0', (err, results) => {
+        if (err) {
+            console.error('Errore durante la query: ', err);
+            return res.status(500).json({ success: false, message: 'Errore server' });
+        }
+        res.json(results);
+    });
+});
+//gestione dell'amministratore per approvare le richieste da parte dei nuovi utenti
+app.post('/admin/approveUser/:id', (req, res) => {
+    const { id } = req.params;
+
+    db.query('UPDATE utenti SET approved = 1 WHERE id = ?', [id], (err, results) => {
+        if (err) {
+            console.error('Errore durante l\'approvazione dell\'utente: ', err);
+            return res.status(500).json({ success: false, message: 'Errore server' });
+        }
+
+        if (results.affectedRows === 0) {
+            return res.json({ success: false, message: 'Utente non trovato' });
+        }
+
+        res.json({ success: true, message: 'Utente approvato con successo!' });
+    });
+});
+
+//gestione dell'amministratore per eliminare le richieste da parte dei nuovi utenti
+
+app.post('/admin/rejectUser/:id', (req, res) => {
+    const { id } = req.params;
+
+    db.query('DELETE FROM utenti WHERE id = ?', [id], (err) => {
+        if (err) {
+            console.error('Errore durante il rifiuto dell\'utente: ', err);
+            return res.status(500).json({ success: false, message: 'Errore server' });
+        }
+
+        res.json({ success: true, message: 'Utente rifiutato!' });
+    });
+});
+
+app.get('/getSavedExercises', (req, res) => {
+    const query = 'SELECT * FROM esercizi';
+    db.query(query, (err, result) => {
+        if (err) {
+            console.error('Errore durante il recupero degli esercizi:', err);
+            return res.status(500).send('Errore del server');
+        }
+        return res.json({status: true, result});
+    });
+});
+
+app.post("/saveWorkout", (req, res) => {
+    const { exercise, day, sets } = req.body;
+    const sql = "INSERT INTO piano_workout (esercizio, giorno, sets) VALUES (?, ?, ?)";
+    
+    db.query(sql, [exercise, day, sets], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: "Workout salvato!", id: result.insertId });
+    });
+});
+
+app.delete("/deleteAllExercises", async (req, res) => {
+    try {
+        db.query("DELETE FROM piano_workout");
+    } catch (error) {
+        console.error("Errore eliminazione esercizi:", error);
+        res.status(500).json({ error: "Errore del server" });
+    }
 });
 
 app.listen(port, () => {

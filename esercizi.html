@@ -10,7 +10,9 @@
             font-family: Arial, sans-serif;
             background: #f5f5f5;
         }
-
+        table tr {
+            background-color: #f4f4f4;  /* Colore di sfondo per le righe della tabella */
+        }
         /* Menù laterale */
        .side-menu {
             width: 250px;
@@ -116,82 +118,70 @@
         </header>
 
         <main>
-            <div class="exercise-card" id="exercise1">
-                <h3>Squat</h3>
-                <p>Esercizio per allenare le gambe e i glutei.</p>
-                <div class="input-group">
-                    <label for="day1">Seleziona il giorno:</label>
-                    <select id="day1">
-                        <option value="Lunedì">Lunedì</option>
-                        <option value="Martedì">Martedì</option>
-                        <option value="Mercoledì">Mercoledì</option>
-                        <option value="Giovedì">Giovedì</option>
-                        <option value="Venerdì">Venerdì</option>
-                    </select>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Esercizio</th>
+                        <th>Giorno</th>
+                        <th>Serie</th>
+                    </tr>
+                </thead>
+                <tbody id="savedExercises"></tbody>
+            </table>
 
-                    <label for="sets1">Numero di serie:</label>
-                    <input type="number" id="sets1" min="1" max="10" value="3">
-
-                    <button class="add-button" onclick="addExercise('Squat', 'Esercizio per allenare le gambe e i glutei', 'day1', 'sets1')">Aggiungi alla scheda</button>
-                </div>
-            </div>
-
-            <div class="exercise-card" id="exercise2">
-                <h3>Push-up</h3>
-                <p>Esercizio per allenare il petto, le braccia e la parte superiore del corpo.</p>
-                <div class="input-group">
-                    <label for="day2">Seleziona il giorno:</label>
-                    <select id="day2">
-                        <option value="Lunedì">Lunedì</option>
-                        <option value="Martedì">Martedì</option>
-                        <option value="Mercoledì">Mercoledì</option>
-                        <option value="Giovedì">Giovedì</option>
-                        <option value="Venerdì">Venerdì</option>
-                    </select>
-
-                    <label for="sets2">Numero di serie:</label>
-                    <input type="number" id="sets2" min="1" max="10" value="3">
-
-                    <button class="add-button" onclick="addExercise('Push-up', 'Esercizio per allenare il petto, le braccia e la parte superiore del corpo', 'day2', 'sets2')">Aggiungi alla scheda</button>
-                </div>
-            </div>
-
+            <footer>
+                <p>© 2025 Gym App | <a href="#">Privacy Policy</a> | <a href="#">Contattaci</a></p>
+            </footer>
         </main>
-    </div>
-
-    <footer>
-        <p>© 2025 Gym App | <a href="#">Privacy Policy</a> | <a href="#">Contattaci</a></p>
-    </footer>
-
-    <script>
-        function addExercise(exerciseName, description, dayId, setsId) {
-            const day = document.getElementById(dayId).value;
-            const sets = document.getElementById(setsId).value;
-
-            if (exerciseName && day && sets) {
-                const exercise = {
-                    exercise: exerciseName,
-                    description: description,
-                    day: day,
-                    sets: sets
-                };
-
-                let savedExercises = JSON.parse(localStorage.getItem('profileExercises')) || [];
-                savedExercises.push(exercise);
-                localStorage.setItem('profileExercises', JSON.stringify(savedExercises));
-
-                alert(`${exerciseName} aggiunto alla tua scheda per ${day} con ${sets} serie!`);
-            } else {
-                alert('Per favore, seleziona il giorno e il numero di serie.');
-            }
-        }
         
-        document.getElementById('clearExercises').addEventListener('click', function() {
-            if (confirm("Sei sicuro di voler svuotare la tua scheda? Questa azione non può essere annullata.")) {
-                localStorage.removeItem('profileExercises');  
-                alert('Scheda svuotata con successo!');
-            }
-        });
+        <script>
+            // Funzione per caricare gli esercizi salvati dalla tabella piano_workout
+        function loadSavedExercises() {
+                  
+            // Uso fetch per fare una richiesta GET alla route del server
+            fetch('/getSavedExercises')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Errore nel recupero dei dati');
+                    }
+                    return response.json();
+                })
+                .then(exercises => {
+                    console.log(exercises);  // Log per vedere cosa ricevi dal server
+                    const tableBody = document.getElementById("savedExercises");
+
+                    // Pulisce la tabella prima di aggiungere i nuovi dati
+                    tableBody.innerHTML = "";
+                    if (exercises.length === 0) {
+                        console.log('Nessun esercizio trovato nella tabella');  // Log per nessun dato trovato
+                    } else {
+                        console.log('Esercizi trovati:', exercises); // Log per vedere i dati ricevuti
+                    }
+        
+                    // Aggiungo ogni esercizio come una nuova riga della tabella
+                    exercises.result.forEach(exercise => {
+                        console.log(exercise);
+                        const row = tableBody.insertRow(); // Crea una nuova riga
+
+                        // Creo le celle e inserisci i dati
+                        const cell1 = row.insertCell(0);
+                        const cell2 = row.insertCell(1);
+                        const cell3 = row.insertCell(2);
+
+                        cell1.textContent = exercise.esercizio;  // Nome dell'esercizio
+                        cell2.textContent = exercise.giorno;     // Giorno
+                        cell3.textContent = exercise.sets;       // Numero di serie
+                    });
+                })
+                .catch(error => {
+                    console.error("Errore durante il recupero degli esercizi:", error);
+                });
+        }
+
+        // Carico gli esercizi salvati quando la pagina è pronta
+        document.addEventListener('DOMContentLoaded', loadSavedExercises);
+    
     </script>
 </body>
 </html>

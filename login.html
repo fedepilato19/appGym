@@ -35,7 +35,6 @@
             })
             .then(response => response.json())
             .then(data => {
-                alert(data.message);
                 if (data.success) {
                     // Memorizza il nome utente nel localStorage
                     localStorage.setItem('username', data.username);
