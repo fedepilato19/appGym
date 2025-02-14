@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Esercizi Disponibili - Gym</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+        }
+
+        /* Menù laterale */
+       .side-menu {
+            width: 250px;
+            background-color: #1e3a8a;
+            color: white;
+            position: fixed;
+            height: 100%;
+            padding-top: 20px;
+            box-shadow: 4px 0 10px rgba(0, 0, 0, 0.2);
+            left: 0;
+            top: 0;
+        }
+
+        .side-menu a {
+            display: block;
+            padding: 15px;
+            text-decoration: none;
+            color: white;
+            font-size: 1.2rem;
+            margin: 10px 0;
+            transition: background-color 0.3s;
+        }
+
+        .side-menu a:hover {
+            background-color: #2563eb;
+        }
+        header {
+            background: linear-gradient(to right, #1e3a8a, #2563eb);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .content {
+            margin-left: 230px;
+            width: 100%;
+            padding: 20px;
+        }
+
+        .exercise-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .exercise-card h3 {
+            color: #333;
+        }
+
+        .exercise-card p {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .input-group {
+            margin-top: 10px;
+        }
+
+        select, input {
+            padding: 10px;
+            margin-right: 10px;
+        }
+
+        .add-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .add-button:hover {
+            background-color: #45a049;
+        }
+
+        footer {
+            background: #1e3a8a;
+            color: white;
+            text-align: center;
+            padding: 15px 0;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="side-menu">
+        <a href="homepage.html">Homepage</a>
+        <a href="scheda.html">La mia Scheda</a>
+        <a href="esercizi.html">Esercizi Disponibili</a>
+        <a href="profilo.html">Il mio Profilo</a>
+        <a href="login.html" id="logout">Logout</a>
+    </div>
+
+    <div class="content">
+        <header>
+            <h1>Esercizi Disponibili</h1>
+        </header>
+
+        <main>
+            <div class="exercise-card" id="exercise1">
+                <h3>Squat</h3>
+                <p>Esercizio per allenare le gambe e i glutei.</p>
+                <div class="input-group">
+                    <label for="day1">Seleziona il giorno:</label>
+                    <select id="day1">
+                        <option value="Lunedì">Lunedì</option>
+                        <option value="Martedì">Martedì</option>
+                        <option value="Mercoledì">Mercoledì</option>
+                        <option value="Giovedì">Giovedì</option>
+                        <option value="Venerdì">Venerdì</option>
+                    </select>
+
+                    <label for="sets1">Numero di serie:</label>
+                    <input type="number" id="sets1" min="1" max="10" value="3">
+
+                    <button class="add-button" onclick="addExercise('Squat', 'Esercizio per allenare le gambe e i glutei', 'day1', 'sets1')">Aggiungi alla scheda</button>
+                </div>
+            </div>
+
+            <div class="exercise-card" id="exercise2">
+                <h3>Push-up</h3>
+                <p>Esercizio per allenare il petto, le braccia e la parte superiore del corpo.</p>
+                <div class="input-group">
+                    <label for="day2">Seleziona il giorno:</label>
+                    <select id="day2">
+                        <option value="Lunedì">Lunedì</option>
+                        <option value="Martedì">Martedì</option>
+                        <option value="Mercoledì">Mercoledì</option>
+                        <option value="Giovedì">Giovedì</option>
+                        <option value="Venerdì">Venerdì</option>
+                    </select>
+
+                    <label for="sets2">Numero di serie:</label>
+                    <input type="number" id="sets2" min="1" max="10" value="3">
+
+                    <button class="add-button" onclick="addExercise('Push-up', 'Esercizio per allenare il petto, le braccia e la parte superiore del corpo', 'day2', 'sets2')">Aggiungi alla scheda</button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <footer>
+        <p>© 2025 Gym App | <a href="#">Privacy Policy</a> | <a href="#">Contattaci</a></p>
+    </footer>
+
+    <script>
+        function addExercise(exerciseName, description, dayId, setsId) {
+            const day = document.getElementById(dayId).value;
+            const sets = document.getElementById(setsId).value;
+
+            if (exerciseName && day && sets) {
+                const exercise = {
+                    exercise: exerciseName,
+                    description: description,
+                    day: day,
+                    sets: sets
+                };
+
+                let savedExercises = JSON.parse(localStorage.getItem('profileExercises')) || [];
+                savedExercises.push(exercise);
+                localStorage.setItem('profileExercises', JSON.stringify(savedExercises));
+
+                alert(`${exerciseName} aggiunto alla tua scheda per ${day} con ${sets} serie!`);
+            } else {
+                alert('Per favore, seleziona il giorno e il numero di serie.');
+            }
+        }
+        
+        document.getElementById('clearExercises').addEventListener('click', function() {
+            if (confirm("Sei sicuro di voler svuotare la tua scheda? Questa azione non può essere annullata.")) {
+                localStorage.removeItem('profileExercises');  
+                alert('Scheda svuotata con successo!');
+            }
+        });
+    </script>
+</body>
+</html>

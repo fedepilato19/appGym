@@ -1,0 +1,166 @@
+const express = require('express');
+const mysql = require('mysql2');
+const bodyParser = require('body-parser');
+const path = require('path');
+const app = express();
+const port = 3000;
+
+app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname)));
+
+// Connessione al database MySQL
+const db = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: 'Database2024.',
+    database: 'gym'
+});
+
+db.connect(err => {
+    if (err) {
+        console.error('Errore di connessione al database: ' + err.stack);
+        return;
+    }
+    console.log('Connesso al database MySQL!');
+});
+
+app.post('/register', (req, res) => {
+    const { username, password, email } = req.body;
+
+    db.query('SELECT * FROM utenti WHERE username = ?', [username], (err, results) => {
+        if (err) {
+            console.error('Errore durante la query: ', err);
+            return res.status(500).json({ success: false, message: 'Errore server' });
+        }
+
+        if (results.length > 0) {
+            return res.json({ success: false, message: 'Username già in uso' });
+        }
+
+        db.query('INSERT INTO utenti (username, password, approved, email) VALUES (?, ?, 0, ?)', 
+            [username, password, email], (err, results) => {
+            if (err) {
+                console.error('Errore durante l’inserimento: ', err);
+                return res.status(500).json({ success: false, message: 'Errore server' });
+            }
+
+            console.log(`Nuova richiesta di registrazione: ${username}`);
+
+            res.json({ success: true, message: 'Registrazione in attesa di approvazione. Attendi la conferma.' });
+        });
+    });
+});
+
+app.get('/pending-users', (req, res) => {
+    db.query('SELECT id, username, email FROM utenti WHERE approved = 0', (err, results) => {
+        if (err) {
+            console.error('Errore durante la query: ', err);
+            return res.status(500).json({ success: false, message: 'Errore server' });
+        }
+
+        res.json(results);
+    });
+});
+
+app.post('/admin/approveUser/:id', (req, res) => {
+    const { id } = req.params;
+
+    db.query('UPDATE utenti SET approved = 1 WHERE id = ?', [id], (err, results) => {
+        if (err) {
+            console.error('Errore durante l\'approvazione dell\'utente: ', err);
+            return res.status(500).json({ success: false, message: 'Errore server' });
+        }
+
+        if (results.affectedRows === 0) {
+            return res.json({ success: false, message: 'Utente non trovato' });
+        }
+
+        res.json({ success: true, message: 'Utente approvato con successo!' });
+    });
+});
+
+app.post('/admin/rejectUser/:id', (req, res) => {
+    const { id } = req.params;
+
+    db.query('DELETE FROM utenti WHERE id = ?', [id], (err) => {
+        if (err) {
+            console.error('Errore durante il rifiuto dell\'utente: ', err);
+            return res.status(500).json({ success: false, message: 'Errore server' });
+        }
+
+        res.json({ success: true, message: 'Utente rifiutato!' });
+    });
+});
+
+app.post("/saveExercise", (req, res) => {
+    const { name, description } = req.body;
+    const sql = "INSERT INTO esercizi (nome, descrizione) VALUES (?, ?)";
+    
+    db.query(sql, [name, description], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: "Esercizio salvato!", id: result.insertId });
+    });
+});
+
+app.post("/saveWorkout", (req, res) => {
+    const { exercise, day, sets } = req.body;
+    const sql = "INSERT INTO piano_workout (esercizio, giorno, sets) VALUES (?, ?, ?)";
+    
+    db.query(sql, [exercise, day, sets], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: "Workout salvato!", id: result.insertId });
+    });
+});
+
+app.delete("/deleteAllExercises", async (req, res) => {
+    try {
+        db.query("DELETE FROM piano_workout");
+    } catch (error) {
+        console.error("Errore eliminazione esercizi:", error);
+        res.status(500).json({ error: "Errore del server" });
+    }
+});
+
+app.get('/getSavedExercises', (req, res) => {
+    const query = 'SELECT * FROM piano_workout';
+    db.query(query, (err, result) => {
+        if (err) {
+            console.error('Errore durante il recupero degli esercizi:', err);
+            return res.status(500).send('Errore del server');
+        }
+        res.json(result);
+    });
+});
+
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+
+    db.query(
+        'SELECT * FROM utenti WHERE username = ? AND password = ?',
+        [username, password],
+        (err, results) => {
+            if (err) {
+                console.error('Errore durante la query: ', err);
+                return res.status(500).json({ success: false, message: 'Errore server' });
+            }
+
+            if (results.length === 0) {
+                return res.json({ success: false, message: 'Credenziali errate' });
+            }
+
+            if (results[0].approved === 0) {
+                return res.json({ success: false, message: 'Attendi l’approvazione dell’admin.' });
+            }
+
+            res.json({
+                success: true,
+                message: 'Login effettuato con successo!',
+                username: results[0].username
+            });
+        }
+    );
+});
+
+app.listen(port, () => {
+    console.log(`Server in ascolto sulla porta ${port}`);
+});
