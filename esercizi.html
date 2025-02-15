@@ -6,9 +6,11 @@
     <title>Esercizi Disponibili - Gym</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-        body {
+        body{
             font-family: Arial, sans-serif;
             background: #f5f5f5;
+            height: 100%;  /* Assicura che l'intera altezza della finestra venga utilizzata */
+            margin: 0;  /* Rimuove i margini predefiniti */
         }
         table tr {
             background-color: #f4f4f4;  /* Colore di sfondo per le righe della tabella */
@@ -99,8 +101,51 @@
             position: absolute;
             bottom: 0;
             width: 100%;
+            transition: background-color 0.3s;
         }
 
+        .exercise-form {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .exercise-form h3 {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .exercise-form .input-group {
+            margin-bottom: 15px;
+        }
+
+        .exercise-form label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .exercise-form select, .exercise-form input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .exercise-form button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .exercise-form button:hover {
+            background-color: #45a049;
+        }
     </style>
 </head>
 <body>
@@ -118,15 +163,43 @@
         </header>
 
         <main>
-            
+            <div class="exercise-form">
+                <h3>Aggiungi un nuovo esercizio</h3>
+                <form id="addExerciseForm">
+                    <div class="input-group">
+                        <label for="exercise">Esercizio:</label>
+                        <select id="exercise" required>
+                            <option value="Push-up">Push-up</option>
+                            <option value="Squat">Squat</option>
+                            <option value="Plank">Plank</option>
+                            <option value="Lunges">Lunges</option>
+                            <!-- Aggiungi qui altri esercizi -->
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="day">Giorno:</label>
+                        <select id="day" required>
+                            <option value="Lunedì">Lunedì</option>
+                            <option value="Martedì">Martedì</option>
+                            <option value="Mercoledì">Mercoledì</option>
+                            <option value="Giovedì">Giovedì</option>
+                            <option value="Venerdì">Venerdì</option>
+                            <option value="Sabato">Sabato</option>
+                            <option value="Domenica">Domenica</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="sets">Serie:</label>
+                        <input type="number" id="sets" min="1" required>
+                    </div>
+
+                    <button type="submit" class="add-button">Aggiungi all'allenamento</button>
+                </form>
+            </div>
+
             <table>
-                <thead>
-                    <tr>
-                        <th>Esercizio</th>
-                        <th>Giorno</th>
-                        <th>Serie</th>
-                    </tr>
-                </thead>
                 <tbody id="savedExercises"></tbody>
             </table>
 
@@ -134,54 +207,70 @@
                 <p>© 2025 Gym App | <a href="#">Privacy Policy</a> | <a href="#">Contattaci</a></p>
             </footer>
         </main>
-        
+
         <script>
             // Funzione per caricare gli esercizi salvati dalla tabella piano_workout
-        function loadSavedExercises() {
-                  
-            // Uso fetch per fare una richiesta GET alla route del server
-            fetch('/getSavedExercises')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Errore nel recupero dei dati');
-                    }
-                    return response.json();
-                })
-                .then(exercises => {
-                    console.log(exercises);  // Log per vedere cosa ricevi dal server
-                    const tableBody = document.getElementById("savedExercises");
-
-                    // Pulisce la tabella prima di aggiungere i nuovi dati
-                    tableBody.innerHTML = "";
-                    if (exercises.length === 0) {
-                        console.log('Nessun esercizio trovato nella tabella');  // Log per nessun dato trovato
-                    } else {
-                        console.log('Esercizi trovati:', exercises); // Log per vedere i dati ricevuti
-                    }
-        
-                    // Aggiungo ogni esercizio come una nuova riga della tabella
-                    exercises.result.forEach(exercise => {
-                        console.log(exercise);
-                        const row = tableBody.insertRow(); // Crea una nuova riga
-
-                        // Creo le celle e inserisci i dati
-                        const cell1 = row.insertCell(0);
-                        const cell2 = row.insertCell(1);
-                        const cell3 = row.insertCell(2);
-
-                        cell1.textContent = exercise.esercizio;  // Nome dell'esercizio
-                        cell2.textContent = exercise.giorno;     // Giorno
-                        cell3.textContent = exercise.sets;       // Numero di serie
+            function loadSavedExercises() {
+                fetch('/getSavedExercises')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById("savedExercises");
+                    container.innerHTML = "";
+                    
+                    data.result.forEach(exercise => {
+                        const card = document.createElement("div");
+                        card.classList.add("exercise-card");
+                        
+                        card.innerHTML = `
+                            <h3>${exercise.esercizio}</h3>
+                            <p><strong>Giorno:</strong> ${exercise.giorno}</p>
+                            <p><strong>Serie:</strong> ${exercise.sets}</p>
+                        `;
+                        
+                        container.appendChild(card);
                     });
                 })
-                .catch(error => {
-                    console.error("Errore durante il recupero degli esercizi:", error);
-                });
-        }
+                .catch(error => console.error("Errore nel recupero degli esercizi:", error));
+            }
 
-        // Carico gli esercizi salvati quando la pagina è pronta
-        document.addEventListener('DOMContentLoaded', loadSavedExercises);
-    
-    </script>
+            document.addEventListener('DOMContentLoaded', loadSavedExercises);
+
+            // Gestione del form per aggiungere esercizi
+            document.getElementById('addExerciseForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+
+                const exercise = document.getElementById('exercise').value;
+                const day = document.getElementById('day').value;
+                const sets = document.getElementById('sets').value;
+
+                const newExercise = { exercise, day, sets };
+
+                // Salva l'esercizio nel localStorage
+                let savedExercises = JSON.parse(localStorage.getItem('profileExercises')) || [];
+                savedExercises.push(newExercise);
+                localStorage.setItem('profileExercises', JSON.stringify(savedExercises));
+
+                // Aggiungi l'esercizio al database
+                fetch('http://localhost:3000/addExercise', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(newExercise)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data.message);
+                    loadSavedExercises();
+                })
+                .catch(error => {
+                    console.error('Errore durante l\'aggiunta dell\'esercizio:', error);
+                });
+
+                // Reset del form
+                document.getElementById('addExerciseForm').reset();
+            });
+        </script>
+    </div>
 </body>
 </html>

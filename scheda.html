@@ -114,94 +114,59 @@
             <h1>La tua Scheda Personalizzata</h1>
         </header>
 
-        <main>
-            <div class="profile-card">
-                <h2>La mia scheda📋</h2>
+        <div class="profile-card">
+            <h2>Esercizi Aggiunti</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Esercizio</th>
+                        <th>Giorno</th>
+                        <th>Serie</th>
+                    </tr>
+                </thead>
+                <tbody id="savedExercisesTable"></tbody>
+            </table>
 
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Esercizio</th>
-                            <th>Giorno</th>
-                            <th>Serie</th>
-                        </tr>
-                    </thead>
-                    <tbody id="savedExercisesTable">
-                        <!-- Gli esercizi salvati verranno mostrati qui -->
-                    </tbody>
-                </table>
-                <button id="clearExercises" class="clear-button">Svuota Scheda</button>
-            </div>
-        </main>
-    </div>
+            <button class="clear-button" id="clearExercises">Svuota Scheda</button>
+        </div>
 
-    <script>
-        // Funzione per mostrare gli esercizi salvati nella scheda
-        function displaySavedExercises() {
-            const savedExercises = JSON.parse(localStorage.getItem('profileExercises')) || [];
-            const exerciseList = document.getElementById('savedExercisesTable');
+        <footer>
+            <p>© 2025 Gym App | <a href="#">Privacy Policy</a> | <a href="#">Contattaci</a></p>
+        </footer>
 
-            if (savedExercises.length === 0) {
-                exerciseList.innerHTML = '<tr><td colspan="3">Non hai ancora aggiunto esercizi.</td></tr>';
-            } else {
-                exerciseList.innerHTML = savedExercises.map(exercise => {
-                    return `
-                        <tr>
-                            <td>${exercise.exercise}</td>
-                            <td>${exercise.day}</td>
-                            <td>${exercise.sets} serie</td>
-                        </tr>
-                    `;
-                }).join('');
+        <script>
+            // Funzione per caricare gli esercizi dalla scheda personalizzata
+            function displaySavedExercises() {
+                const savedExercises = JSON.parse(localStorage.getItem('profileExercises')) || [];
+                const exerciseList = document.getElementById('savedExercisesTable');
+
+                if (savedExercises.length === 0) {
+                    exerciseList.innerHTML = '<tr><td colspan="3">Non hai ancora aggiunto esercizi.</td></tr>';
+                } else {
+                    exerciseList.innerHTML = savedExercises.map(exercise => {
+                        return `
+                            <tr>
+                                <td>${exercise.exercise}</td>
+                                <td>${exercise.day}</td>
+                                <td>${exercise.sets} serie</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
             }
-        }
 
-        // Carica gli esercizi salvati quando la pagina è pronta
-        window.onload = function() {
-            displaySavedExercises();
-        };
-
-        document.getElementById('clearExercises').addEventListener('click', function() {
-            localStorage.removeItem('profileExercises');  // Cancella gli esercizi salvati
-            displaySavedExercises();  // Aggiorna la tabella per riflettere i cambiamenti
-            alert('Scheda svuotata con successo!');
-        });
-
-        // Gestione del form per aggiungere esercizi
-        document.getElementById('addExerciseForm').addEventListener('submit', function(event) {
-            event.preventDefault();
-
-            const exercise = document.getElementById('exercise').value;
-            const day = document.getElementById('day').value;
-            const sets = document.getElementById('sets').value;
-
-            const newExercise = { exercise, day, sets };
-
-            // Salva l'esercizio nel localStorage
-            let savedExercises = JSON.parse(localStorage.getItem('profileExercises')) || [];
-            savedExercises.push(newExercise);
-            localStorage.setItem('profileExercises', JSON.stringify(savedExercises));
-
-            // Aggiungi l'esercizio al database
-            fetch('http://localhost:3000/addExercise', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(newExercise)
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log(data.message);
+            // Carica gli esercizi salvati quando la pagina è pronta
+            window.onload = function() {
                 displaySavedExercises();
-            })
-            .catch(error => {
-                console.error('Errore durante l\'aggiunta dell\'esercizio:', error);
-            });
+            };
 
-            // Reset del form
-            document.getElementById('addExerciseForm').reset();
-        });
-    </script>
+            // Gestisci il bottone "Svuota Scheda"
+            document.getElementById('clearExercises').addEventListener('click', function() {
+                localStorage.removeItem('profileExercises');
+                displaySavedExercises();
+                alert('Scheda svuotata con successo!');
+            });
+        </script>
+    </div>
 </body>
 </html>
