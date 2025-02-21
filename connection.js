@@ -135,17 +135,91 @@ app.get('/getSavedExercises', (req, res) => {
             console.error('Errore durante il recupero degli esercizi:', err);
             return res.status(500).send('Errore del server');
         }
-        return res.json({status: true, result});
+        res.json(result);
     });
 });
 
-app.post("/saveWorkout", (req, res) => {
-    const { exercise, day, sets } = req.body;
-    const sql = "INSERT INTO piano_workout (esercizio, giorno, sets) VALUES (?, ?, ?)";
+app.post("/addExerciseToWorkout", (req, res) => {
+    const { username, exercise, day, sets } = req.body;
     
-    db.query(sql, [exercise, day, sets], (err, result) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: "Workout salvato!", id: result.insertId });
+    // Prima otteniamo l'ID dell'utente
+    db.query('SELECT id FROM utenti WHERE username = ?', [username], (err, userResults) => {
+        if (err) {
+            console.error('Errore durante la query utente:', err);
+            return res.status(500).json({ success: false, message: 'Errore nel server' });
+        }
+        
+        if (userResults.length === 0) {
+            return res.status(404).json({ success: false, message: 'Utente non trovato' });
+        }
+
+        const userId = userResults[0].id;
+
+        // Ora otteniamo l'ID dell'esercizio
+        db.query('SELECT id FROM esercizi WHERE nome = ?', [exercise], (err, exerciseResults) => {
+            if (err) {
+                console.error('Errore durante la query esercizio:', err);
+                return res.status(500).json({ success: false, message: 'Errore nel server' });
+            }
+
+            if (exerciseResults.length === 0) {
+                return res.status(404).json({ success: false, message: 'Esercizio non trovato' });
+            }
+
+            const exerciseId = exerciseResults[0].id;
+
+            // Ora possiamo inserire i dati nella tabella piano_workout
+            const sql = "INSERT INTO piano_workout (serie, giorno, esercizio_id, utente_id) VALUES (?, ?, ?, ?)";
+            db.query(sql, [sets, day, exerciseId, userId], (err, result) => {
+                if (err) {
+                    console.error('Errore durante l\'inserimento nell\'esercizio:', err);
+                    return res.status(500).json({ success: false, message: 'Errore nel salvataggio' });
+                }
+                res.json({ success: true });
+            });
+        });
+    });
+});
+
+// Modifica la route per ottenere gli esercizi specifici dell'utente
+app.get('/getUserWorkouts', (req, res) => {
+    const username = req.query.username;
+    
+    db.query('SELECT id FROM utenti WHERE username = ?', [username], (err, results) => {
+        if (err || results.length === 0) {
+            return res.status(500).json({ success: false, message: 'Utente non trovato' });
+        }
+
+        const userId = results[0].id;
+        
+        const query = 'SELECT * FROM piano_workout WHERE user_id = ?';
+        db.query(query, [userId], (err, workouts) => {
+            if (err) {
+                return res.status(500).json({ success: false, message: 'Errore nel recupero degli esercizi' });
+            }
+            res.json({ success: true, workouts: workouts });
+        });
+    });
+});
+
+// Svuota la scheda dell'utente
+app.post("/clearUserWorkouts", (req, res) => {
+    const { username } = req.body;
+    
+    db.query('SELECT id FROM utenti WHERE username = ?', [username], (err, results) => {
+        if (err || results.length === 0) {
+            return res.status(500).json({ success: false, message: 'Utente non trovato' });
+        }
+
+        const userId = results[0].id;
+
+        // Elimina tutti gli esercizi dalla tabella piano_workout per quell'utente
+        db.query('DELETE FROM piano_workout WHERE user_id = ?', [userId], (err) => {
+            if (err) {
+                return res.status(500).json({ success: false, message: 'Errore durante l\'eliminazione degli esercizi' });
+            }
+            res.json({ success: true, message: 'Scheda svuotata con successo' });
+        });
     });
 });
 

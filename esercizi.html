@@ -9,21 +9,34 @@
         body {
             font-family: Arial, sans-serif;
             background: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden; /* Impedisce lo scroll orizzontale quando il menu è aperto */
         }
-        table tr {
-            background-color: #f4f4f4;  /* Colore di sfondo per le righe della tabella */
+
+        /* Style per l'header fisso */
+        header {
+            background: linear-gradient(to right, #1e3a8a, #2563eb);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000; /* Per evitare che l'header venga coperto */
         }
-        /* Menù laterale */
-       .side-menu {
+
+        /* Menu laterale */
+        .side-menu {
             width: 250px;
             background-color: #1e3a8a;
             color: white;
             position: fixed;
             height: 100%;
-            padding-top: 20px;
-            box-shadow: 4px 0 10px rgba(0, 0, 0, 0.2);
-            left: 0;
             top: 0;
+            left: -250px; /* Inizialmente nascosto */
+            transition: left 0.3s ease;
+            z-index: 999; /* Assicurati che il menu sia sopra il contenuto */
         }
 
         .side-menu a {
@@ -39,56 +52,62 @@
         .side-menu a:hover {
             background-color: #2563eb;
         }
-        header {
-            background: linear-gradient(to right, #1e3a8a, #2563eb);
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
 
-        .content {
-            margin-left: 230px;
-            width: 100%;
-            padding: 20px;
-        }
-
-        .exercise-card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-        }
-
-        .exercise-card h3 {
-            color: #333;
-        }
-
-        .exercise-card p {
-            color: #666;
-            margin-bottom: 10px;
-        }
-
-        .input-group {
-            margin-top: 10px;
-        }
-
-        select, input {
-            padding: 10px;
-            margin-right: 10px;
-        }
-
-        .add-button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
+        /* Bottone hamburger */
+        .hamburger {
+            font-size: 30px;
             cursor: pointer;
+            color: white;
+            position: fixed;
+            left: 20px;
+            top: 20px;
+            z-index: 1001; /* Assicurarsi che l'icona sia sopra il menu */
         }
 
-        .add-button:hover {
-            background-color: #45a049;
+        /* Overlay quando il menu è aperto */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+        }
+
+        .overlay.show {
+            display: block;
+        }
+
+        /* Contenuto */
+        .content {
+            margin-left: 0; /* Inizialmente il contenuto occupa tutta la larghezza */
+            padding: 20px;
+            margin-top: 120px; /* Per evitare sovrapposizione con l'header */
+            transition: margin-left 0.3s ease;
+        }
+
+        table {
+            width: 80%; /* La larghezza della tabella è ora l'80% della larghezza della pagina */
+            max-width: 1000px; /* Imposta una larghezza massima */
+            margin: 20px auto; 
+            border-collapse: collapse;
+        }
+
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        table th {
+            background-color: #1e3a8a;
+            color: white;
         }
 
         footer {
@@ -96,15 +115,29 @@
             color: white;
             text-align: center;
             padding: 15px 0;
-            position: absolute;
-            bottom: 0;
             width: 100%;
+            position: relative;
+            bottom: 0;
+        }
+
+        /* Responsività per il menu */
+        @media screen and (max-width: 768px) {
+            .side-menu {
+                width: 100%;
+            }
+
+            .content {
+                margin-left: 0;
+            }
         }
 
     </style>
 </head>
 <body>
-    <div class="side-menu">
+    <div class="hamburger" onclick="toggleMenu()">☰</div>
+
+    <!-- Menu laterale -->
+    <div class="side-menu" id="sideMenu">
         <a href="homepage.html">Homepage</a>
         <a href="scheda.html">La mia Scheda</a>
         <a href="esercizi.html">Esercizi Disponibili</a>
@@ -112,19 +145,23 @@
         <a href="login.html" id="logout">Logout</a>
     </div>
 
+    <!-- Overlay per oscurare il contenuto quando il menu è aperto -->
+    <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
     <div class="content">
         <header>
             <h1>Esercizi Disponibili</h1>
         </header>
 
         <main>
-            
             <table>
                 <thead>
                     <tr>
                         <th>Esercizio</th>
-                        <th>Giorno</th>
+                        <th>Descrizione</th>
                         <th>Serie</th>
+                        <th>Giorno</th>
+                        <th>Azioni</th>
                     </tr>
                 </thead>
                 <tbody id="savedExercises"></tbody>
@@ -134,54 +171,108 @@
                 <p>© 2025 Gym App | <a href="#">Privacy Policy</a> | <a href="#">Contattaci</a></p>
             </footer>
         </main>
-        
-        <script>
-            // Funzione per caricare gli esercizi salvati dalla tabella piano_workout
-        function loadSavedExercises() {
-                  
-            // Uso fetch per fare una richiesta GET alla route del server
-            fetch('/getSavedExercises')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Errore nel recupero dei dati');
-                    }
-                    return response.json();
-                })
-                .then(exercises => {
-                    console.log(exercises);  // Log per vedere cosa ricevi dal server
-                    const tableBody = document.getElementById("savedExercises");
+    </div>
 
-                    // Pulisce la tabella prima di aggiungere i nuovi dati
-                    tableBody.innerHTML = "";
-                    if (exercises.length === 0) {
-                        console.log('Nessun esercizio trovato nella tabella');  // Log per nessun dato trovato
-                    } else {
-                        console.log('Esercizi trovati:', exercises); // Log per vedere i dati ricevuti
-                    }
-        
-                    // Aggiungo ogni esercizio come una nuova riga della tabella
-                    exercises.result.forEach(exercise => {
-                        console.log(exercise);
-                        const row = tableBody.insertRow(); // Crea una nuova riga
+    <script>
+        // Funzione per aprire e chiudere il menu laterale
+        function toggleMenu() {
+            const sideMenu = document.getElementById('sideMenu');
+            const overlay = document.getElementById('overlay');
+            const content = document.querySelector('.content');
 
-                        // Creo le celle e inserisci i dati
-                        const cell1 = row.insertCell(0);
-                        const cell2 = row.insertCell(1);
-                        const cell3 = row.insertCell(2);
-
-                        cell1.textContent = exercise.esercizio;  // Nome dell'esercizio
-                        cell2.textContent = exercise.giorno;     // Giorno
-                        cell3.textContent = exercise.sets;       // Numero di serie
-                    });
-                })
-                .catch(error => {
-                    console.error("Errore durante il recupero degli esercizi:", error);
-                });
+            // Se il menu è chiuso, aprilo
+            if (sideMenu.style.left === '-250px' || sideMenu.style.left === '') {
+                sideMenu.style.left = '0'; // Mostra il menu
+                content.style.marginLeft = '250px'; // Sposta il contenuto a destra
+                overlay.classList.add('show'); // Mostra l'overlay
+            } else {
+                sideMenu.style.left = '-250px'; // Nascondi il menu
+                content.style.marginLeft = '0'; // Ripristina il contenuto
+                overlay.classList.remove('show'); // Nascondi l'overlay
+            }
         }
 
-        // Carico gli esercizi salvati quando la pagina è pronta
-        document.addEventListener('DOMContentLoaded', loadSavedExercises);
-    
+        // Funzione per caricare gli esercizi salvati
+        fetch('/getSavedExercises')
+        .then(response => response.json()) 
+        .then(exercises => {
+            const tableBody = document.getElementById("savedExercises");
+            exercises.forEach(exercise => {
+                const row = document.createElement("tr");
+                row.id = `exercise-${exercise.id}`;
+                const nomeCell = document.createElement("td");
+                nomeCell.textContent = exercise.nome; 
+
+                const descrizioneCell = document.createElement("td");
+                descrizioneCell.textContent = exercise.descrizione;
+
+                const serieCell = document.createElement("td");
+                const serieSelect = document.createElement("select");
+                serieSelect.className = "serie-select";
+                for(let i = 1; i <= 10; i++) {
+                    const option = document.createElement("option");
+                    option.value = i;
+                    option.textContent = i + " serie";
+                    serieSelect.appendChild(option);
+                }
+                serieCell.appendChild(serieSelect);
+
+                const giornoCell = document.createElement("td");
+                const giornoSelect = document.createElement("select");
+                giornoSelect.className = "giorno-select";
+                const giorni = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
+                giorni.forEach(giorno => {
+                    const option = document.createElement("option");
+                    option.value = giorno;
+                    option.textContent = giorno;
+                    giornoSelect.appendChild(option);
+                });
+                giornoCell.appendChild(giornoSelect);
+
+                const actionCell = document.createElement("td");
+                const addButton = document.createElement("button");
+                addButton.textContent = "Aggiungi";
+                addButton.className = "add-button";
+                addButton.onclick = () => {
+                    const serie = serieSelect.value;
+                    const giorno = giornoSelect.value;
+                    
+                    fetch('/addExerciseToWorkout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            exercise: exercise.nome,
+                            day: giorno,
+                            sets: serie,
+                            username: localStorage.getItem('username')
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.success) {
+                            alert('Esercizio aggiunto alla scheda!');
+                        } else {
+                            alert('Errore durante il salvataggio: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Errore:', error);
+                        alert('Errore durante il salvataggio');
+                    });
+                };
+                actionCell.appendChild(addButton);
+
+                row.appendChild(nomeCell);
+                row.appendChild(descrizioneCell);
+                row.appendChild(serieCell);
+                row.appendChild(giornoCell);
+                row.appendChild(actionCell);
+                tableBody.appendChild(row);
+            });
+        })
+        .catch(error => console.error("Errore nel caricamento: ", error));
     </script>
 </body>
 </html>

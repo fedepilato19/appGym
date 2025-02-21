@@ -98,6 +98,15 @@
         .clear-button:hover {
             background-color: #c9302c;
         }
+        footer {
+            background: #1e3a8a;
+            color: white;
+            text-align: center;
+            padding: 15px 0;
+            width: 100%;
+            position: relative;
+            bottom: 0;
+        }
     </style>
 </head>
 <body>
@@ -137,34 +146,59 @@
         <script>
             // Funzione per caricare gli esercizi dalla scheda personalizzata
             function displaySavedExercises() {
-                const savedExercises = JSON.parse(localStorage.getItem('profileExercises')) || [];
-                const exerciseList = document.getElementById('savedExercisesTable');
-
-                if (savedExercises.length === 0) {
-                    exerciseList.innerHTML = '<tr><td colspan="3">Non hai ancora aggiunto esercizi.</td></tr>';
-                } else {
-                    exerciseList.innerHTML = savedExercises.map(exercise => {
-                        return `
-                            <tr>
-                                <td>${exercise.exercise}</td>
-                                <td>${exercise.day}</td>
-                                <td>${exercise.sets} serie</td>
-                            </tr>
-                        `;
-                    }).join('');
-                }
+                
+                fetch(`/getUserWorkouts`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const exerciseList = document.getElementById('savedExercisesTable');
+                        
+                        if (data.success && data.workouts.length > 0) {
+                            exerciseList.innerHTML = (exercise => {
+                                return `
+                                    <td>
+                                        <tr>${exercise.esercizio_id}</tr>  <!-- Inserisci il nome dell'esercizio se necessario -->
+                                        <tr>${exercise.giorno}</tr>
+                                        <tr>${exercise.serie} serie</tr>
+                                    </td>
+                                `;
+                            }).join('');
+                        } else {
+                            exerciseList.innerHTML = '<tr><td colspan="3">Non hai ancora aggiunto esercizi.</td></tr>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Errore durante il recupero degli esercizi:", error);
+                    });
             }
-
+        
             // Carica gli esercizi salvati quando la pagina è pronta
             window.onload = function() {
                 displaySavedExercises();
             };
-
+        
             // Gestisci il bottone "Svuota Scheda"
             document.getElementById('clearExercises').addEventListener('click', function() {
-                localStorage.removeItem('profileExercises');
-                displaySavedExercises();
-                alert('Scheda svuotata con successo!');
+                const username = "nome_utente";  // Sostituisci con il nome dell'utente loggato
+                
+                fetch('/clearUserWorkouts', {
+                    method: 'POST',
+                    body: JSON.stringify({ username }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Scheda svuotata con successo!');
+                        displaySavedExercises();  // Ricarica la tabella vuota
+                    } else {
+                        alert('Errore nel svuotamento della scheda');
+                    }
+                })
+                .catch(error => {
+                    console.error("Errore durante la cancellazione della scheda:", error);
+                });
             });
         </script>
     </div>
